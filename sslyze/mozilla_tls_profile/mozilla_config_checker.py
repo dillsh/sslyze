@@ -175,7 +175,9 @@ def _check_tls_curves(
     if tls_curves_difference:
         issues_with_tls_curves["tls_curves"] = {
             "description": f"TLS curves {tls_curves_difference} are supported, but should be rejected.",
-            "current": [f"{tls_curves_difference}"],
+            "variables": {
+                "current": [f"{tls_curves_difference}"],
+            }
         }
 
     # TODO(AD): Disable the check on the curves; not even Google, Mozilla nor Cloudflare are compliant...
@@ -261,37 +263,47 @@ def _check_tls_versions_and_ciphers(
     if tls_versions_difference:
         issues_with_tls_ciphers["tls_versions"] = {
             "description": f"TLS versions {tls_versions_difference} are supported, but should be rejected.",
-            "current": [s for s in tls_versions_difference]
+            "variables": {
+                "current": [s for s in tls_versions_difference]
+            }
         }
     tls_1_3_cipher_suites_difference = tls_1_3_cipher_suites_supported - mozilla_config.ciphersuites
     if tls_1_3_cipher_suites_difference:
         issues_with_tls_ciphers["ciphersuites"] = {
-                "description": f"TLS 1.3 cipher suites {tls_1_3_cipher_suites_difference} are supported, "
-                               f"but should be rejected.",
+            "description": f"TLS 1.3 cipher suites {tls_1_3_cipher_suites_difference} are supported, "
+                           f"but should be rejected.",
+            "variables": {
                 "current": [s for s in tls_1_3_cipher_suites_difference],
-            }
+                }
+        }
     cipher_suites_difference = cipher_suites_supported - mozilla_config.ciphers.iana
     if cipher_suites_difference:
         issues_with_tls_ciphers["ciphers"] = {
-                "description": f"Cipher suites {cipher_suites_difference} are supported, but should be rejected.",
+            "description": f"Cipher suites {cipher_suites_difference} are supported, but should be rejected.",
+            "variables": {
                 "current": [s for s in cipher_suites_difference],
             }
+        }
 
     if mozilla_config.ecdh_param_size and smallest_ecdh_param_size < mozilla_config.ecdh_param_size:
         issues_with_tls_ciphers["ecdh_param_size"] = {
-                "description": f"ECDH parameter size is {smallest_ecdh_param_size},"
-                               f" should be superior or equal to {mozilla_config.ecdh_param_size}.",
+            "description": f"ECDH parameter size is {smallest_ecdh_param_size},"
+                           f" should be superior or equal to {mozilla_config.ecdh_param_size}.",
+            "variables": {
                 "current": [f"{smallest_ecdh_param_size}"],
                 "recommended": [f">= {mozilla_config.ecdh_param_size}"]
             }
+        }
 
     if mozilla_config.dh_param_size and smallest_dh_param_size < mozilla_config.dh_param_size:
         issues_with_tls_ciphers["dh_param_size"] = {
-                "description": f"DH parameter size is {smallest_dh_param_size},"
-                               f" should be superior or equal to {mozilla_config.dh_param_size}.",
+            "description": f"DH parameter size is {smallest_dh_param_size},"
+                           f" should be superior or equal to {mozilla_config.dh_param_size}.",
+            "variables": {
                 "current": [f"{smallest_dh_param_size}"],
                 "recommended": [f">= {mozilla_config.dh_param_size}"]
             }
+        }
 
     return issues_with_tls_ciphers
 
@@ -310,7 +322,9 @@ def _check_certificates(
             issues_with_certificates["certificate_path_validation"] = {
                 "description": f"Certificate path validation failed "
                                f"for {leaf_cert.subject.rfc4514_string()}.",
-                "path": leaf_cert.subject.rfc4514_string()
+                "variables": {
+                    "path": leaf_cert.subject.rfc4514_string()
+                }
             }
         # Validate the public key
         public_key = leaf_cert.public_key()
@@ -330,8 +344,10 @@ def _check_certificates(
                 issues_with_certificates["rsa_key_size"] = {
                     "description": f"RSA key size is {public_key.key_size}, "
                                    f"minimum allowed is {mozilla_config.rsa_key_size}.",
-                    "current": [public_key.key_size],
-                    "recommended": [mozilla_config.rsa_key_size]
+                    "variables": {
+                        "current": [public_key.key_size],
+                        "recommended": [mozilla_config.rsa_key_size]
+                    }
                 }
         else:
             deployed_key_algorithms.add(public_key.__class__.__name__)
@@ -344,8 +360,10 @@ def _check_certificates(
             issues_with_certificates["maximum_certificate_lifespan"] = {
                 "description": f"Certificate life span is {leaf_cert_lifespan.days} days,"
                                f" should be less than {mozilla_config.maximum_certificate_lifespan}.",
-                "current": [f"{leaf_cert_lifespan.days} days"],
-                "recommended": [f"< {mozilla_config.maximum_certificate_lifespan} days"]
+                "variables": {
+                    "current": [f"{leaf_cert_lifespan.days} days"],
+                    "recommended": [f"< {mozilla_config.maximum_certificate_lifespan} days"]
+                }
             }
 
     # TODO(AD): It's unclear whether the Mozilla profile/configs takes into accounts servers with multiple leaf certs
@@ -362,8 +380,10 @@ def _check_certificates(
         issues_with_certificates["certificate_types"] = {
             "description": f"Deployed certificate types are {deployed_key_algorithms},"
                            f" should have at least one of {mozilla_config.certificate_types}.",
-            "current": [s for s in deployed_key_algorithms],
-            "recommended": [s for s in mozilla_config.certificate_types]
+            "variables": {
+                "current": [s for s in deployed_key_algorithms],
+                "recommended": [s for s in mozilla_config.certificate_types]
+            }
         }
 
     # Validate the signature algorithms
@@ -372,13 +392,16 @@ def _check_certificates(
         if sig_algorithm in deployed_signature_algorithms:
             found_sig_algorithm = True
             break
-    if not found_sig_algorithm:
         issues_with_certificates["certificate_signatures"] = {
             "description": f"Deployed certificate signatures are {deployed_signature_algorithms},"
                            f" should have at least one of {mozilla_config.certificate_signatures}.",
-            "current": [s for s in deployed_signature_algorithms],
-            "recommended": [s for s in mozilla_config.certificate_signatures]
+            "variables": {
+                "current": [s for s in deployed_signature_algorithms],
+                "recommended": [s for s in mozilla_config.certificate_signatures]
+            }
         }
+    if not found_sig_algorithm:
+        pass
 
     # TODO(AD): Maybe add check for ocsp_staple but that one seems optional in https://ssl-config.mozilla.org/
 
