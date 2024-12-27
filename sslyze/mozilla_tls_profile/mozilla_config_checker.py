@@ -323,7 +323,7 @@ def _check_certificates(
                 "description": f"Certificate path validation failed "
                                f"for {leaf_cert.subject.rfc4514_string()}.",
                 "variables": {
-                    "path": leaf_cert.subject.rfc4514_string()
+                    "path": [f"{leaf_cert.subject.rfc4514_string()}"]
                 }
             }
         # Validate the public key
