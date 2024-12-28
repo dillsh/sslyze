@@ -392,6 +392,7 @@ def _check_certificates(
         if sig_algorithm in deployed_signature_algorithms:
             found_sig_algorithm = True
             break
+    if not found_sig_algorithm:
         issues_with_certificates["certificate_signatures"] = {
             "description": f"Deployed certificate signatures are {deployed_signature_algorithms},"
                            f" should have at least one of {mozilla_config.certificate_signatures}.",
@@ -400,8 +401,6 @@ def _check_certificates(
                 "recommended": [s for s in mozilla_config.certificate_signatures]
             }
         }
-    if not found_sig_algorithm:
-        pass
 
     # TODO(AD): Maybe add check for ocsp_staple but that one seems optional in https://ssl-config.mozilla.org/
 
